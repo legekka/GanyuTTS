@@ -456,6 +456,17 @@ class SynthesizerTrn(nn.Module):
     if n_speakers > 1:
       self.emb_g = nn.Embedding(n_speakers, gin_channels)
 
+    # send every sub-module to GPU
+    if torch.cuda.is_available():
+      self.enc_p.cuda()
+      self.dec.cuda()
+      self.enc_q.cuda()
+      self.flow.cuda()
+      self.dp.cuda()
+      if n_speakers > 1:
+        self.emb_g.cuda()
+
+
   def forward(self, x, x_lengths, y, y_lengths, sid=None):
 
     x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
@@ -497,6 +508,11 @@ class SynthesizerTrn(nn.Module):
     return o, l_length, attn, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
 
   def infer(self, x, x_lengths, sid=None, noise_scale=1, length_scale=1, noise_scale_w=1., max_len=None):
+    if torch.cuda.is_available():
+      x = x.cuda()
+      x_lengths = x_lengths.cuda()
+      if sid is not None:
+        sid = sid.cuda()
     x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
     if self.n_speakers > 0:
       g = self.emb_g(sid).unsqueeze(-1) # [b, h, 1]

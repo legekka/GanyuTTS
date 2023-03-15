@@ -1,7 +1,7 @@
 import base64
 import os
 import torch
-from torch.utils.data import DataLoader
+import time
 
 # vits
 import vits_commons
@@ -12,7 +12,6 @@ from vits_models import SynthesizerTrn
 from inference.infer_tool import Svc
 from inference import infer_tool
 from inference import slicer
-from pathlib import Path
 import numpy as np
 import io
 import soundfile
@@ -74,6 +73,11 @@ def initModels(args):
 
     _ = vits_utils.load_checkpoint("models/pretrained_vctk.pth", net_g_ms, None)
 
+    # send model to gpu
+    if torch.cuda.is_available():
+        net_g.cuda()
+        net_g_ms.cuda()
+
     # Loading SO-VITS model
     global svc_model
     svc_model = Svc(args.model_path, args.config_path, args.device)
@@ -90,17 +94,17 @@ def initModels(args):
 
 def generate_VITS(text, sid=22):
     if (sid == 22):
-        length_scale = 1.3
-    else:
         length_scale = 1.2
+    else:
+        length_scale = 1.1
     
     stn_tst = get_text(text, hps_ms)
-    print("start")
+    print("VITS start on voice " + str(sid))
     with torch.no_grad():
         x_tst = stn_tst.unsqueeze(0)
         x_tst_lengths = torch.LongTensor([stn_tst.size(0)])
         sid = torch.LongTensor([speaker_VITS])
-        audio = net_g_ms.infer(x_tst, x_tst_lengths, sid=sid, noise_scale=.667, noise_scale_w=0.8, length_scale=length_scale)[0][0,0].data.float().numpy()
+        audio = net_g_ms.infer(x_tst, x_tst_lengths, sid=sid, noise_scale=.667, noise_scale_w=0.8, length_scale=length_scale)[0][0,0].data.float().cpu().numpy()
     print("VITS done")
 
     return audio, hps_ms.data.sampling_rate
@@ -140,6 +144,7 @@ def generate_SO_VITS(audio, sr):
 
 @app.route('/tts', methods=['POST'])
 def tts():
+    start = time.time()
     text = request.form.get('text')
     # get sid too, but only if it's provided
     if 'sid' in request.form:
@@ -157,6 +162,7 @@ def tts():
     file_object.seek(0)
     file_string = file_object.read()
     audio = base64.b64encode(file_string).decode('utf-8')
+    print("Done in " + str(time.time() - start) + " seconds")
     return jsonify({'audio': audio})
 
 def main():
@@ -176,7 +182,7 @@ def main():
     parser.add_argument('-cr', '--cluster_infer_ratio', type=float, default=0, help='聚类方案占比，范围0-1，若没有训练聚类模型则填0即可')
 
     # 不用动的部分
-    parser.add_argument('-sd', '--slice_db', type=int, default=-50, help='默认-40，嘈杂的音频可以-30，干声保留呼吸可以-50')
+    parser.add_argument('-sd', '--slice_db', type=int, default=-60, help='默认-40，嘈杂的音频可以-30，干声保留呼吸可以-50')
     parser.add_argument('-d', '--device', type=str, default=None, help='推理设备，None则为自动选择cpu和gpu')
     parser.add_argument('-ns', '--noice_scale', type=float, default=0.4, help='噪音级别，会影响咬字和音质，较为玄学')
     parser.add_argument('-p', '--pad_seconds', type=float, default=0.5, help='推理音频pad秒数，由于未知原因开头结尾会有异响，pad一小段静音段后就不会出现')

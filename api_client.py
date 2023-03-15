@@ -12,9 +12,13 @@ def play_audio(audio_data, sample_rate=44100):
     sd.play(audio_data, sample_rate)
     sd.wait()
 
+#host = "http://192.168.1.40:4111"
 host = "http://localhost:4111"
 
-text = "This is an example text to be synthesized."
+text = "I am voice number 22. I sound more stable than voice number 99, however I don't play around that much with the pitch of my sound. But at least my voice doesn't crack."
+sid = 22
+
+text = "I am voice number 99. I sound more playful, however I don't sound as stable as voice number 22, and sometimes my voice cracks."
 sid = 99
 
 # send request to API
