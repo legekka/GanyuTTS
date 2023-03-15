@@ -18,8 +18,8 @@ host = "http://localhost:4111"
 text = "I am voice number 22. I sound more stable than voice number 99, however I don't play around that much with the pitch of my sound. But at least my voice doesn't crack."
 sid = 22
 
-text = "I am voice number 99. I sound more playful, however I don't sound as stable as voice number 22, and sometimes my voice cracks."
-sid = 99
+# text = "I am voice number 99. I sound more playful, however I don't sound as stable as voice number 22, and sometimes my voice cracks."
+# sid = 99
 
 # send request to API
 response = requests.post(host + "/tts", data={"text": text, "sid": sid})

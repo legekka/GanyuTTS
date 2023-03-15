@@ -88,11 +88,11 @@ def initModels(args):
     global pad_seconds
     pad_seconds = args.pad_seconds
 
-def generate_audio(text):
+def generate_audio(text, speaker_VITS=22):
     # Generating audio with VITS
 
     if (speaker_VITS == 22):
-        length_scale = 1.3
+        length_scale = 1.2
     else:
         length_scale = 1.1
 
@@ -102,7 +102,7 @@ def generate_audio(text):
         x_tst = stn_tst.unsqueeze(0)
         x_tst_lengths = torch.LongTensor([stn_tst.size(0)])
         sid = torch.LongTensor([speaker_VITS])
-        audio = net_g_ms.infer(x_tst, x_tst_lengths, sid=sid, noise_scale=.667, noise_scale_w=0.8, length_scale=length_scale)[0][0,0].data.float().numpy()
+        audio = net_g_ms.infer(x_tst, x_tst_lengths, sid=sid, noise_scale=.667, noise_scale_w=0.8, length_scale=length_scale)[0][0,0].data.float().cpu().numpy()
     print("VITS done")
 
     # Converting audio with SO-VITS
@@ -153,7 +153,7 @@ def checkForChangesAndSpeak():
 
     if (len(lines) > 0) and lineslength != len(lines):
         print("Speaking: " + lines[-1])
-        generate_audio(lines[-1])
+        generate_audio(lines[-1], speaker_VITS=99)
         lineslength = len(lines)
 
 
@@ -174,7 +174,7 @@ def main():
     parser.add_argument('-cr', '--cluster_infer_ratio', type=float, default=0, help='聚类方案占比，范围0-1，若没有训练聚类模型则填0即可')
 
     # 不用动的部分
-    parser.add_argument('-sd', '--slice_db', type=int, default=-40, help='默认-40，嘈杂的音频可以-30，干声保留呼吸可以-50')
+    parser.add_argument('-sd', '--slice_db', type=int, default=-60, help='默认-40，嘈杂的音频可以-30，干声保留呼吸可以-50')
     parser.add_argument('-d', '--device', type=str, default=None, help='推理设备，None则为自动选择cpu和gpu')
     parser.add_argument('-ns', '--noice_scale', type=float, default=0.4, help='噪音级别，会影响咬字和音质，较为玄学')
     parser.add_argument('-p', '--pad_seconds', type=float, default=0.5, help='推理音频pad秒数，由于未知原因开头结尾会有异响，pad一小段静音段后就不会出现')
@@ -182,7 +182,7 @@ def main():
     args = parser.parse_args()
 
     initModels(args)
-    
+    generate_audio("Warming up...", speaker_VITS=99)
     print("Starting speech responder")
     # loop the checker and speaker
     while True:
