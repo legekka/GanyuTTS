@@ -1,8 +1,5 @@
+import base64
 import os
-import time
-import sounddevice as sd
-from text.symbols import symbols
-from text import text_to_sequence
 import torch
 from torch.utils.data import DataLoader
 
@@ -21,16 +18,28 @@ import io
 import soundfile
 import logging
 
+# common
+from text.symbols import symbols
+from text import text_to_sequence
+
+# flask
+from flask_cors import CORS
+from flask import Flask, jsonify, request
+
+
 logging.getLogger().setLevel(logging.ERROR)
 
+speaker_VITS = 22 # 22 and 99 was good
+ganyu_model = "models/ganyu_27+14.pth"
+
+# check if os is windows
 if os.name == 'nt':
     os.environ["PHONEMIZER_ESPEAK_PATH"] = "C:\Program Files\eSpeak NG\espeak.exe"
     os.environ["PHONEMIZER_ESPEAK_LIBRARY"] = "C:\Program Files\eSpeak NG\libespeak-ng.dll"
 
-speaker_VITS = 99 # 22 and 99 was good
-ganyu_model = "models/ganyu_27+14.pth"
-speechresponderpath = os.path.join(os.getenv("APPDATA"), "EDDI", "speechresponder.out")
-lineslength = 0
+# defining flask app
+app = Flask("ganyuTTS")
+CORS(app)
 
 def get_text(text, hps):
     text_norm = text_to_sequence(text, hps.data.text_cleaners)
@@ -38,15 +47,6 @@ def get_text(text, hps):
         text_norm = vits_commons.intersperse(text_norm, 0)
     text_norm = torch.LongTensor(text_norm)
     return text_norm
-
-def play_audio(audio_data, sample_rate=44100):
-    sd.play(audio_data, sample_rate)
-    sd.wait()
-    # clear the audio buffer
-    # play silence to clear the audio buffer
-    sd.play(np.zeros(1000), sample_rate)
-    sd.wait()
-
 
 def initModels(args):
     # loading VITS model
@@ -88,14 +88,12 @@ def initModels(args):
     global pad_seconds
     pad_seconds = args.pad_seconds
 
-def generate_audio(text):
-    # Generating audio with VITS
-
-    if (speaker_VITS == 22):
+def generate_VITS(text, sid=22):
+    if (sid == 22):
         length_scale = 1.3
     else:
-        length_scale = 1.1
-
+        length_scale = 1.2
+    
     stn_tst = get_text(text, hps_ms)
     print("start")
     with torch.no_grad():
@@ -105,10 +103,11 @@ def generate_audio(text):
         audio = net_g_ms.infer(x_tst, x_tst_lengths, sid=sid, noise_scale=.667, noise_scale_w=0.8, length_scale=length_scale)[0][0,0].data.float().numpy()
     print("VITS done")
 
-    # Converting audio with SO-VITS
+    return audio, hps_ms.data.sampling_rate
 
-    chunks = slicer.cut2(audio, sr=hps_ms.data.sampling_rate)
-    audio_data, audio_sr = slicer.chunks2audio2(audio=audio, sr=hps_ms.data.sampling_rate, chunks=chunks)
+def generate_SO_VITS(audio, sr):
+    chunks = slicer.cut2(audio, sr=sr)
+    audio_data, audio_sr = slicer.chunks2audio2(audio=audio, sr=sr, chunks=chunks)
 
     audio = []
     for (slice_tag, data) in audio_data:
@@ -135,27 +134,30 @@ def generate_audio(text):
             _audio = _audio[pad_len:-pad_len]
 
         audio.extend(list(infer_tool.pad_array(_audio, length)))
-    play_audio(audio, svc_model.target_sample)
+    
+    return audio, svc_model.target_sample
 
 
-# loop of the checker and speaker
-def checkForChangesAndSpeak():
-    global lineslength
-    try:
-        with open(speechresponderpath, "r") as f:
-            lines = f.readlines()
-            if (len(lines) > lineslength):
-                print("New line detected")
-                
-    except:
-        print("Could not read file")
-        return
+@app.route('/tts', methods=['POST'])
+def tts():
+    text = request.form.get('text')
+    # get sid too, but only if it's provided
+    if 'sid' in request.form:
+        sid = int(request.form.get('sid'))
+    else:
+        sid = 22
 
-    if (len(lines) > 0) and lineslength != len(lines):
-        print("Speaking: " + lines[-1])
-        generate_audio(lines[-1])
-        lineslength = len(lines)
+    print("Got text from client: " + text)
+    
+    audio, sr = generate_VITS(text, sid)
+    audio, sr = generate_SO_VITS(audio, sr)
 
+    file_object = io.BytesIO()
+    soundfile.write(file_object, audio, sr, format="wav")
+    file_object.seek(0)
+    file_string = file_object.read()
+    audio = base64.b64encode(file_string).decode('utf-8')
+    return jsonify({'audio': audio})
 
 def main():
     import argparse
@@ -174,7 +176,7 @@ def main():
     parser.add_argument('-cr', '--cluster_infer_ratio', type=float, default=0, help='聚类方案占比，范围0-1，若没有训练聚类模型则填0即可')
 
     # 不用动的部分
-    parser.add_argument('-sd', '--slice_db', type=int, default=-40, help='默认-40，嘈杂的音频可以-30，干声保留呼吸可以-50')
+    parser.add_argument('-sd', '--slice_db', type=int, default=-50, help='默认-40，嘈杂的音频可以-30，干声保留呼吸可以-50')
     parser.add_argument('-d', '--device', type=str, default=None, help='推理设备，None则为自动选择cpu和gpu')
     parser.add_argument('-ns', '--noice_scale', type=float, default=0.4, help='噪音级别，会影响咬字和音质，较为玄学')
     parser.add_argument('-p', '--pad_seconds', type=float, default=0.5, help='推理音频pad秒数，由于未知原因开头结尾会有异响，pad一小段静音段后就不会出现')
@@ -182,13 +184,12 @@ def main():
     args = parser.parse_args()
 
     initModels(args)
-    
-    print("Starting speech responder")
-    # loop the checker and speaker
-    while True:
-        checkForChangesAndSpeak()
-        # sleep for 0.5 seconds
-        time.sleep(0.5)
+  
+    # warmup
+    print("Warming up...")
+    audio, sr = generate_VITS("Warming up...", 22)
+    audio, sr = generate_SO_VITS(audio, sr)
     
 if __name__ == "__main__":
     main()
+    app.run(host='0.0.0.0', port=4111, debug=False)

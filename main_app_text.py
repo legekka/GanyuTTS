@@ -28,8 +28,9 @@ logging.getLogger().setLevel(logging.ERROR)
 speaker_VITS = 22 # 22 and 99 was good
 ganyu_model = "models/ganyu_27+14.pth"
 
-os.environ["PHONEMIZER_ESPEAK_PATH"] = "C:\Program Files\eSpeak NG\espeak.exe"
-os.environ["PHONEMIZER_ESPEAK_LIBRARY"] = "C:\Program Files\eSpeak NG\libespeak-ng.dll"
+if os.name == 'nt':
+    os.environ["PHONEMIZER_ESPEAK_PATH"] = "C:\Program Files\eSpeak NG\espeak.exe"
+    os.environ["PHONEMIZER_ESPEAK_LIBRARY"] = "C:\Program Files\eSpeak NG\libespeak-ng.dll"
 
 def get_text(text, hps):
     text_norm = text_to_sequence(text, hps.data.text_cleaners)
