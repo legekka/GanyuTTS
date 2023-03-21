@@ -26,6 +26,8 @@ logging.getLogger().setLevel(logging.ERROR)
 if os.name == 'nt':
     os.environ["PHONEMIZER_ESPEAK_PATH"] = "C:\Program Files\eSpeak NG\espeak.exe"
     os.environ["PHONEMIZER_ESPEAK_LIBRARY"] = "C:\Program Files\eSpeak NG\libespeak-ng.dll"
+    # deactivate cuda
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 speaker_VITS = 99 # 22 and 99 was good
 ganyu_model = "models/ganyu_27+14.pth"
@@ -153,7 +155,7 @@ def checkForChangesAndSpeak():
 
     if (len(lines) > 0) and lineslength != len(lines):
         print("Speaking: " + lines[-1])
-        generate_audio(lines[-1], speaker_VITS=99)
+        generate_audio(lines[-1], speaker_VITS=22)
         lineslength = len(lines)
 
 
@@ -165,7 +167,7 @@ def main():
     # 一定要设置的部分
     parser.add_argument('-m', '--model_path', type=str, default=ganyu_model, help='sovits model path')
     parser.add_argument('-c', '--config_path', type=str, default="configs/ganyu.json", help='sovits model config path')
-    parser.add_argument('-t', '--trans', type=int, nargs='+', default=0, help='pitch shift transposition') 
+    parser.add_argument('-t', '--trans', type=int, default=0, help='pitch shift transposition') 
 
     # 可选项部分
     parser.add_argument('-a', '--auto_predict_f0', action='store_true', default=False,
@@ -182,7 +184,7 @@ def main():
     args = parser.parse_args()
 
     initModels(args)
-    generate_audio("Warming up...", speaker_VITS=99)
+    generate_audio("Warming up...", speaker_VITS=22)
     print("Starting speech responder")
     # loop the checker and speaker
     while True:

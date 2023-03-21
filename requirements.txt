@@ -22,3 +22,8 @@ monotonic-align==1.0.0
 sounddevice==0.4.6
 flask==2.2.3
 flask-cors==3.0.10
+
+#for eddi_tts
+openai
+keyboard
+whisper

@@ -25,8 +25,10 @@ from scipy.io.wavfile import write
 
 logging.getLogger().setLevel(logging.ERROR)
 
-speaker_VITS = 22 # 22 and 99 was good
-ganyu_model = "models/ganyu_27+14.pth"
+speaker_VITS = 99 # 22 and 99 was good
+ganyu_model = "models/diona_21.pth"
+ganyu_config = "configs/diona.json"
+ganyu_name = "diona"
 
 if os.name == 'nt':
     os.environ["PHONEMIZER_ESPEAK_PATH"] = "C:\Program Files\eSpeak NG\espeak.exe"
@@ -120,7 +122,7 @@ def generate_audio(text):
             raw_path = io.BytesIO()
             soundfile.write(raw_path, data, audio_sr, format="wav")
             raw_path.seek(0)
-            out_audio, out_sr = svc_model.infer("ganyu", trans, raw_path,
+            out_audio, out_sr = svc_model.infer(ganyu_name, trans, raw_path,
                                                 cluster_infer_ratio=cluster_infer_ratio,
                                                 auto_predict_f0=auto_predict_f0,
                                                 noice_scale=noice_scale
@@ -131,6 +133,7 @@ def generate_audio(text):
 
         audio.extend(list(infer_tool.pad_array(_audio, length)))
     play_audio(audio, svc_model.target_sample)
+    soundfile.write("output.wav", audio, svc_model.target_sample, format="wav")
 
 def main():
     import argparse
@@ -140,8 +143,8 @@ def main():
     # 一定要设置的部分
     parser.add_argument('-txt','--text', type=str, default="Let's get started. I'll be your guide today.", help='text to be synthesized')
     parser.add_argument('-m', '--model_path', type=str, default=ganyu_model, help='sovits model path')
-    parser.add_argument('-c', '--config_path', type=str, default="configs/ganyu.json", help='sovits model config path')
-    parser.add_argument('-t', '--trans', type=int, nargs='+', default=0, help='pitch shift transposition') 
+    parser.add_argument('-c', '--config_path', type=str, default=ganyu_config, help='sovits model config path')
+    parser.add_argument('-t', '--trans', type=int, default=0, help='pitch shift transposition') 
 
     # 可选项部分
     parser.add_argument('-a', '--auto_predict_f0', action='store_true', default=False,

@@ -1,3 +1,6 @@
 __pycache__
 *.pt
 *.pth
+tmp/*
+eddi_data/*
+config.json

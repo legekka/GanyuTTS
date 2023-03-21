@@ -29,7 +29,25 @@ from flask import Flask, jsonify, request
 logging.getLogger().setLevel(logging.ERROR)
 
 speaker_VITS = 22 # 22 and 99 was good
-ganyu_model = "models/ganyu_27+14.pth"
+
+sovits_models = {
+    "ganyu": {
+        "model_path": "models/ganyu_27+14.pth",
+        "config_path": "configs/ganyu.json",
+        "model": None
+    },
+    "yae": {
+        "model_path": "models/yae_29.pth",
+        "config_path": "configs/yae.json",
+        "model": None
+    },
+    "diona": {
+        "model_path": "models/diona_21.pth",
+        "config_path": "configs/diona.json",
+        "model": None,
+        "trans": 6
+    }
+}
 
 # check if os is windows
 if os.name == 'nt':
@@ -78,19 +96,22 @@ def initModels(args):
         net_g.cuda()
         net_g_ms.cuda()
 
-    # Loading SO-VITS model
-    global svc_model
-    svc_model = Svc(args.model_path, args.config_path, args.device)
-    global trans
-    trans = args.trans
-    global auto_predict_f0
-    auto_predict_f0 = args.auto_predict_f0
-    global cluster_infer_ratio
-    cluster_infer_ratio = args.cluster_infer_ratio
-    global noice_scale
-    noice_scale = args.noice_scale
-    global pad_seconds
-    pad_seconds = args.pad_seconds
+    # Loading SO-VITS models
+    global sovits_models
+    for model in sovits_models:
+        sovits_models[model]["model"] = Svc(sovits_models[model]["model_path"], sovits_models[model]["config_path"], args.device)
+        #if the value's are set already, use them instead of the parameters
+        # check if sovits_models[model]["trans"] exists
+        if "trans" not in sovits_models[model].keys():
+             sovits_models[model]["trans"] = args.trans
+        if "auto_predict_f0" not in sovits_models[model].keys():
+            sovits_models[model]["auto_predict_f0"] = args.auto_predict_f0
+        if "cluster_infer_ratio" not in sovits_models[model].keys():
+            sovits_models[model]["cluster_infer_ratio"] = args.cluster_infer_ratio
+        if "noice_scale" not in sovits_models[model].keys():
+            sovits_models[model]["noice_scale"] = args.noice_scale
+        if "pad_seconds" not in sovits_models[model].keys():
+            sovits_models[model]["pad_seconds"] = args.pad_seconds                       
 
 def generate_VITS(text, sid=22):
     if (sid == 22):
@@ -109,7 +130,8 @@ def generate_VITS(text, sid=22):
 
     return audio, hps_ms.data.sampling_rate
 
-def generate_SO_VITS(audio, sr):
+def generate_SO_VITS(audio, sr, modelname="ganyu"):
+    global sovits_models
     chunks = slicer.cut2(audio, sr=sr)
     audio_data, audio_sr = slicer.chunks2audio2(audio=audio, sr=sr, chunks=chunks)
 
@@ -117,29 +139,29 @@ def generate_SO_VITS(audio, sr):
     for (slice_tag, data) in audio_data:
         print(f'#=====segment start, {round(len(data) / audio_sr, 3)}s======')
 
-        length = int(np.ceil(len(data) / audio_sr * svc_model.target_sample))
+        length = int(np.ceil(len(data) / audio_sr * sovits_models[modelname]["model"].target_sample))
         if slice_tag:
             print('jump empty segment')
             _audio = np.zeros(length)
         else:
             # padd
-            pad_len = int(audio_sr * pad_seconds)
+            pad_len = int(audio_sr * sovits_models[modelname]["pad_seconds"])
             data = np.concatenate([np.zeros([pad_len]), data, np.zeros([pad_len])])
             raw_path = io.BytesIO()
             soundfile.write(raw_path, data, audio_sr, format="wav")
             raw_path.seek(0)
-            out_audio, out_sr = svc_model.infer("ganyu", trans, raw_path,
-                                                cluster_infer_ratio=cluster_infer_ratio,
-                                                auto_predict_f0=auto_predict_f0,
-                                                noice_scale=noice_scale
+            out_audio, out_sr = sovits_models[modelname]["model"].infer(modelname, sovits_models[modelname]["trans"], raw_path,
+                                                cluster_infer_ratio=sovits_models[modelname]["cluster_infer_ratio"],
+                                                auto_predict_f0=sovits_models[modelname]["auto_predict_f0"],
+                                                noice_scale=sovits_models[modelname]["noice_scale"]
                                                 )
             _audio = out_audio.cpu().numpy()
-            pad_len = int(svc_model.target_sample * pad_seconds)
+            pad_len = int(sovits_models[modelname]["model"].target_sample * sovits_models[modelname]["pad_seconds"])
             _audio = _audio[pad_len:-pad_len]
 
         audio.extend(list(infer_tool.pad_array(_audio, length)))
     
-    return audio, svc_model.target_sample
+    return audio, sovits_models[modelname]["model"].target_sample
 
 
 @app.route('/tts', methods=['POST'])
@@ -151,11 +173,13 @@ def tts():
         sid = int(request.form.get('sid'))
     else:
         sid = 22
+    if 'sid2' in request.form:
+        sid2 = str(request.form.get('sid2'))
 
     print("Got text from client: " + text)
     
     audio, sr = generate_VITS(text, sid)
-    audio, sr = generate_SO_VITS(audio, sr)
+    audio, sr = generate_SO_VITS(audio, sr, sid2)
 
     file_object = io.BytesIO()
     soundfile.write(file_object, audio, sr, format="wav")
@@ -171,7 +195,6 @@ def main():
     parser = argparse.ArgumentParser(description='ganyuTTS inference')
 
     # 一定要设置的部分
-    parser.add_argument('-m', '--model_path', type=str, default=ganyu_model, help='sovits model path')
     parser.add_argument('-c', '--config_path', type=str, default="configs/ganyu.json", help='sovits model config path')
     parser.add_argument('-t', '--trans', type=int, nargs='+', default=0, help='pitch shift transposition') 
 
@@ -194,7 +217,7 @@ def main():
     # warmup
     print("Warming up...")
     audio, sr = generate_VITS("Warming up...", 22)
-    audio, sr = generate_SO_VITS(audio, sr)
+    audio, sr = generate_SO_VITS(audio, sr, "ganyu")
     
 if __name__ == "__main__":
     main()
