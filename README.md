@@ -2,7 +2,7 @@
 
 Tool for EDDI to convert text to speech using Ganyu's voice.
 Well, technically it's not just Ganyu, but originally I used Ganyu's voice to make this.
-Models will be uploaded to Huggingface soon.
+Models are available on [my huggingface repo](https://huggingface.co/legekka/ganyutts)
 
 This is definitely just a toy project, so don't expect too much. There are many things still hardcoded, and the code is not very clean. I'll try to clean it up in the future.
 
@@ -67,7 +67,7 @@ This is heavily work in progress.
 
 ## Models
 
-All models should be in the models folder, you have to download it manually from my huggingface repo.
+All models should be in the models folder, you have to download it manually from [my huggingface repo](https://huggingface.co/legekka/ganyutts).
 Also, don't forget to download the hubert model, it is needed for SO-VITS.
 *I am using "checkpoint_best_legacy_500.pt"*
 
