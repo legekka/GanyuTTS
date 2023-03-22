@@ -33,7 +33,7 @@ There are few apps in this repo.
 This is a basic app for EDDI. It checks the `speechresponder.out` file for new lines, and automatically reads them out loud. Ideal for listening to the game's dialogue.
 It uses the VITS model for basic TTS and then the SO-VITS model for the voice conversion.
 
-I deactivated CUDA for this because my PC couldn't handle it while I was gaming, but you can enable by deleting line 33 in `main_app.py`.
+I deactivated CUDA for this because my PC couldn't handle it while I was gaming, but you can enable by deleting **line 30** in `main_app.py`.
 
 ### 2. main_app_text.py
 
