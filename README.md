@@ -10,7 +10,7 @@ I just made this repo for my own convenience, but feel free to use it if you wan
 
 ## Some gameplay footage from youtube
 
-[Video link](https://youtu.be/ejV9PRwBa7g)
+[![Video](https://img.youtube.com/vi/ejV9PRwBa7g/maxresdefault.jpg)](https://youtu.be/ejV9PRwBa7g)
 
 ## Installation
 
