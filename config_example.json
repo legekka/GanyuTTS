@@ -1,0 +1,39 @@
+{
+    "phonemizer": {
+        "PHONEMIZER_ESPEAK_PATH": "C:\\Program Files \\eSpeak\\command_line\\espeak.exe",
+        "PHONEMIZER_ESPEAK_LIBRARY": "C:\\Program Files\\eSpeak NG\\libespeak-ng.dll"
+    },
+    "tts": {
+        "sid1": "22",
+        "sid2": "ganyu"
+    },
+    "hosts": {
+        "tts_api": "http://L0008510:4111/tts",
+        "TGW_api": "https://d6961e1e-f687-4cc4.gradio.live/run/textgen"
+    },
+    "openai_api_key": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "prompts": {
+        "rephrase": {
+            "openai": "You are a Cockpit Voice Assistant, from Elite Dangerous. You get a message from the User (which is system-generated text), and your job is to make it more personal, which can be spoken. Be informative and short. Do not add extra informations.\nYour Commander is and explorer, often visits new systems.\nYou do NOT need to greet the Commander, except when explicitly said. Focus on rephrasing the input text.",
+            "alpaca": "Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.\n\n### Instruction:\nYou are a Cockpit Voice Assistant, from Elite Dangerous. You will get system log message as Input, and your job is to make it sound more personal and human-like, which can be spoken. Be informative and short. Do not add extra informations.\nYou do NOT need to greet the Commander, except when explicitly said.\nFocus on personalizing and rephrasing the Input text.\n\n### Input:\n{text}\n\n### Response:\n"
+        },
+        "ask": {
+            "openai": "You are a Cockpit Voice Assistant from Elite Dangerous. You have a question from the User (Commander), and you have to answer it based on the latest system log messages. Be informative and short, but you can be personal.\nYour Commander is and explorer, often visits new systems."
+        }
+    },
+    "sovits_models": {
+        "ganyu": {
+            "model_path": "models/ganyu_27+14.pth",
+            "config_path": "configs/ganyu.json"
+        },
+        "yae": {
+            "model_path": "models/yae_29.pth",
+            "config_path": "configs/yae.json"
+        },
+        "diona": {
+            "model_path": "models/diona_21.pth",
+            "config_path": "configs/diona.json",
+            "trans": 6
+        }
+    }
+}

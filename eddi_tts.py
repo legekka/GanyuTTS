@@ -32,18 +32,7 @@ with open("eddi_data/messages.json", "r") as f:
     messages = json.load(f)
 
 def rephrase_text_TGW(text):
-    prompt = """Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
-
-### Instruction:
-You are a Cockpit Voice Assistant, from Elite Dangerous. You will get system log message as Input, and your job is to make it sound more personal and human-like, which can be spoken. Be informative and short. Do not add extra informations.
-You do NOT need to greet the Commander, except when explicitly said.
-Focus on personalizing and rephrasing the Input text.
-
-### Input:
-{text}
-
-### Response:
-"""
+    prompt = config["prompts"]["rephrase"]["alpaca"]
     prompt = prompt.format(text=text)
     form_data = {
         "data": [
@@ -60,7 +49,7 @@ Focus on personalizing and rephrasing the Input text.
     return cleaned_text
 
 def ask_text_OpenAI(text):
-    system_prompt = config["ask"]["system"]
+    system_prompt = config["prompts"]["ask"]["openai"]
     start = time.time()
     last_messages = messages[-30:]
     last_messages = list(map(lambda message: {"role": message["role"], "content": message["text"]}, last_messages))
@@ -76,7 +65,7 @@ def ask_text_OpenAI(text):
     return response.choices[0].message.content
 
 def rephrase_text_OpenAI(text): 
-    system_prompt = config["rephrase"]["system"]
+    system_prompt = config["prompts"]["rephrase"]["openai"]
     start = time.time()
     try: 
         response = openai.ChatCompletion.create(

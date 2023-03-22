@@ -25,10 +25,10 @@ from scipy.io.wavfile import write
 
 logging.getLogger().setLevel(logging.ERROR)
 
-speaker_VITS = 99 # 22 and 99 was good
-ganyu_model = "models/diona_21.pth"
-ganyu_config = "configs/diona.json"
-ganyu_name = "diona"
+speaker_VITS = 22 # 22 and 99 was good
+ganyu_model = "models/ganyu_27+14.pth"
+ganyu_config = "configs/ganyu.json"
+ganyu_name = "ganyu"
 
 if os.name == 'nt':
     os.environ["PHONEMIZER_ESPEAK_PATH"] = "C:\Program Files\eSpeak NG\espeak.exe"
@@ -140,24 +140,19 @@ def main():
 
     parser = argparse.ArgumentParser(description='ganyuTTS inference')
 
-    # 一定要设置的部分
     parser.add_argument('-txt','--text', type=str, default="Let's get started. I'll be your guide today.", help='text to be synthesized')
     parser.add_argument('-m', '--model_path', type=str, default=ganyu_model, help='sovits model path')
     parser.add_argument('-c', '--config_path', type=str, default=ganyu_config, help='sovits model config path')
     parser.add_argument('-t', '--trans', type=int, default=0, help='pitch shift transposition') 
-
-    # 可选项部分
     parser.add_argument('-a', '--auto_predict_f0', action='store_true', default=False,
-                        help='语音转换自动预测音高，转换歌声时不要打开这个会严重跑调')
-    parser.add_argument('-cm', '--cluster_model_path', type=str, default="logs/44k/kmeans_10000.pt", help='聚类模型路径，如果没有训练聚类则随便填')
-    parser.add_argument('-cr', '--cluster_infer_ratio', type=float, default=0, help='聚类方案占比，范围0-1，若没有训练聚类模型则填0即可')
-
-    # 不用动的部分
-    parser.add_argument('-sd', '--slice_db', type=int, default=-60, help='默认-40，嘈杂的音频可以-30，干声保留呼吸可以-50')
-    parser.add_argument('-d', '--device', type=str, default=None, help='推理设备，None则为自动选择cpu和gpu')
-    parser.add_argument('-ns', '--noice_scale', type=float, default=0.4, help='噪音级别，会影响咬字和音质，较为玄学')
-    parser.add_argument('-p', '--pad_seconds', type=float, default=0.5, help='推理音频pad秒数，由于未知原因开头结尾会有异响，pad一小段静音段后就不会出现')
-    parser.add_argument('-wf', '--wav_format', type=str, default='wav', help='音频输出格式')
+                        help="auto predict f0 for voice conversion, don't turn on this when converting to song") 
+    parser.add_argument('-cm', '--cluster_model_path', type=str, default="logs/44k/kmeans_10000.pt", help="cluster model path, if you don't train cluster model, just fill anything")
+    parser.add_argument('-cr', '--cluster_infer_ratio', type=float, default=0, help="cluster infer ratio, range 0-1, if you don't train cluster model, just fill 0")
+    parser.add_argument('-sd', '--slice_db', type=int, default=-60, help="default -40, noisy audio can be -30, breath can be -50")
+    parser.add_argument('-d', '--device', type=str, default=None, help="device, None for auto select cpu and gpu")
+    parser.add_argument('-ns', '--noice_scale', type=float, default=0.4, help="noice scale, will affect pronunciation and sound quality, quite mysterious")
+    parser.add_argument('-p', '--pad_seconds', type=float, default=0.5, help="pad seconds for inference audio, there will be some noise at the beginning and end of the audio, pad a small silent segment and the noise will disappear")
+    parser.add_argument('-wf', '--wav_format', type=str, default='wav', help='audio format') 
     args = parser.parse_args()
 
     initModels(args)

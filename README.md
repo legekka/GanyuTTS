@@ -21,6 +21,9 @@ Also, I recommend using Python 3.9 or higher. GPU is not required, but it will s
 pip install -r requirements.txt
 ```
 
+For **phonemizer** you need to have **espeak** installed. On Windows, you can download it from **[here](https://github.com/espeak-ng/espeak-ng/releases)**.
+On Linux, you can install it using your package manager.
+
 ## Usage
 
 There are few apps in this repo.
@@ -37,7 +40,7 @@ I deactivated CUDA for this because my PC couldn't handle it while I was gaming,
 This is just a basic text-to-speech app for testing the voices. It uses the same process as the main app.
 
 ```bash
-python main_app_text.py --txt "Hello, world!"
+python main_app_text.py --text "Hello, world!"
 ```
 
 ### 3. main_app_api.py
@@ -63,7 +66,15 @@ This is a more advanced app for EDDI, which uses the main_app_api.py for TTS, an
 - Rephrasing the text to make it sound more natural with [text-generation-webui](https://github.com/oobabooga/text-generation-webui) API
 - Interactive mode either through asking questions through microphone or typing, and using OpenAI's ChatGPT API to generate intelligent responses
 
+eddi_tts needs an extra folder named `eddi_data` and a `messages.json` file inside it. An example file is provided. It can be just an empty array. It is used to store the conversations for the interactive mode. (It sends the last 30 messages to the ChatGPT API for context.)
+
 This is heavily work in progress.
+
+## Config file
+
+The program needs a config file named `config.json` in the root folder. An example file is provided. You can change the paths to the models and the API keys.
+Phonemizer paths are only relevant for Windows users, you can edit here if you have espeak installed in a different location.
+If you want to use the interactive mode, you need to get an API key from [OpenAI](https://openai.com/). It's super cheap and worth the quality of the responses.
 
 ## Models
 
