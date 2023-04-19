@@ -115,6 +115,10 @@ def generate_VITS(text, sid=22):
         sid = torch.LongTensor([speaker_VITS])
         audio = net_g_ms.infer(x_tst, x_tst_lengths, sid=sid, noise_scale=.667, noise_scale_w=0.8, length_scale=length_scale)[0][0,0].data.float().cpu().numpy()
     print("VITS done")
+    
+    # clean cuda memory cache
+    torch.cuda.empty_cache()
+
 
     return audio, hps_ms.data.sampling_rate
 
@@ -149,6 +153,9 @@ def generate_SO_VITS(audio, sr, modelname="ganyu"):
 
         audio.extend(list(infer_tool.pad_array(_audio, length)))
     
+    # clean cuda memory cache
+    torch.cuda.empty_cache()
+
     return audio, sovits_models[modelname]["model"].target_sample
 
 
@@ -182,8 +189,11 @@ def main():
   
     # warmup
     print("Warming up...")
-    audio, sr = generate_VITS("Warming up...", 22)
+    audio, sr = generate_VITS("Hey Commander! Universal Cartographics service has been paused as you ordered!", 22)
+    # save audio into temp as api_warmup_debug.wav
+    soundfile.write("./tmp/api_warmup_debug.wav", audio, sr, format="wav")
     audio, sr = generate_SO_VITS(audio, sr, "ganyu")
+    soundfile.write("./tmp/api_warmup_debug2.wav", audio, sr, format="wav")
     
 if __name__ == "__main__":
     main()
