@@ -1,8 +1,4 @@
 {
-    "whisper": {
-        "use": false,
-        "model": "base"
-    },
     "phonemizer": {
         "PHONEMIZER_ESPEAK_PATH": "C:\\Program Files \\eSpeak\\command_line\\espeak.exe",
         "PHONEMIZER_ESPEAK_LIBRARY": "C:\\Program Files\\eSpeak NG\\libespeak-ng.dll"
@@ -12,33 +8,14 @@
         "sid2": "ganyu"
     },
     "hosts": {
-        "tts_api": "http://L0008510:4111/tts",
-        "TGW_api": "https://10907b90-601b-4a10.gradio.live/run/textgen"
-    },
-    "openai_api_key": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    "prompts": {
-        "rephrase": {
-            "alpaca": "prompts/rephrase_alpaca.txt",
-            "openai": "prompts/rephrase_openai.txt"
-        },
-        "ask": {
-            "alpaca": "prompts/ask_alpaca.txt",
-            "openai": "prompts/ask_openai.txt"
-        }
+        "tts_api": "http://127.0.0.1:4111/tts",
+        "TGW_api": "http://127.0.0.1:7860/run/textgen",
+        "TGWWS_api": "ws://127.0.0.1:7860/queue/join"
     },
     "sovits_models": {
         "ganyu": {
             "model_path": "models/ganyu_27+14.pth",
             "config_path": "configs/ganyu.json"
-        },
-        "yae": {
-            "model_path": "models/yae_29.pth",
-            "config_path": "configs/yae.json"
-        },
-        "diona": {
-            "model_path": "models/diona_21.pth",
-            "config_path": "configs/diona.json",
-            "trans": 6
         }
     }
 }
