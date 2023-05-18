@@ -1,8 +1,4 @@
 import os
-import time
-import sounddevice as sd
-from text.symbols import symbols
-from text import text_to_sequence
 import torch
 from torch.utils.data import DataLoader
 
@@ -21,18 +17,22 @@ import io
 import soundfile
 import logging
 
+# common
+import sounddevice as sd
+from text.symbols import symbols
+from text import text_to_sequence
+from scipy.io.wavfile import write
+
 logging.getLogger().setLevel(logging.ERROR)
+
+speaker_VITS = 22 # 22 and 99 was good
+ganyu_model = "models/ganyu_27+14.pth"
+ganyu_config = "configs/ganyu.json"
+ganyu_name = "ganyu"
 
 if os.name == 'nt':
     os.environ["PHONEMIZER_ESPEAK_PATH"] = "C:\Program Files\eSpeak NG\espeak.exe"
     os.environ["PHONEMIZER_ESPEAK_LIBRARY"] = "C:\Program Files\eSpeak NG\libespeak-ng.dll"
-    # deactivate cuda
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
-speaker_VITS = 99 # 22 and 99 was good
-ganyu_model = "models/ganyu_27+14.pth"
-speechresponderpath = os.path.join(os.getenv("APPDATA"), "EDDI", "speechresponder.out")
-lineslength = 0
 
 def get_text(text, hps):
     text_norm = text_to_sequence(text, hps.data.text_cleaners)
@@ -44,11 +44,6 @@ def get_text(text, hps):
 def play_audio(audio_data, sample_rate=44100):
     sd.play(audio_data, sample_rate)
     sd.wait()
-    # clear the audio buffer
-    # play silence to clear the audio buffer
-    sd.play(np.zeros(1000), sample_rate)
-    sd.wait()
-
 
 def initModels(args):
     # loading VITS model
@@ -90,7 +85,7 @@ def initModels(args):
     global pad_seconds
     pad_seconds = args.pad_seconds
 
-def generate_audio(text, speaker_VITS=22):
+def generate_audio(text):
     # Generating audio with VITS
 
     if (speaker_VITS == 22):
@@ -127,7 +122,7 @@ def generate_audio(text, speaker_VITS=22):
             raw_path = io.BytesIO()
             soundfile.write(raw_path, data, audio_sr, format="wav")
             raw_path.seek(0)
-            out_audio, out_sr = svc_model.infer("ganyu", trans, raw_path,
+            out_audio, out_sr = svc_model.infer(ganyu_name, trans, raw_path,
                                                 cluster_infer_ratio=cluster_infer_ratio,
                                                 auto_predict_f0=auto_predict_f0,
                                                 noice_scale=noice_scale
@@ -138,34 +133,16 @@ def generate_audio(text, speaker_VITS=22):
 
         audio.extend(list(infer_tool.pad_array(_audio, length)))
     play_audio(audio, svc_model.target_sample)
-
-
-# loop of the checker and speaker
-def checkForChangesAndSpeak():
-    global lineslength
-    try:
-        with open(speechresponderpath, "r") as f:
-            lines = f.readlines()
-            if (len(lines) > lineslength):
-                print("New line detected")
-                
-    except:
-        print("Could not read file")
-        return
-
-    if (len(lines) > 0) and lineslength != len(lines):
-        print("Speaking: " + lines[-1])
-        generate_audio(lines[-1], speaker_VITS=22)
-        lineslength = len(lines)
-
+    soundfile.write("output.wav", audio, svc_model.target_sample, format="wav")
 
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description='ganyuTTS inference')
+    parser = argparse.ArgumentParser(description='VITS+SOVITS inference')
 
+    parser.add_argument('-txt','--text', type=str, default="Let's get started. I'll be your guide today.", help='text to be synthesized')
     parser.add_argument('-m', '--model_path', type=str, default=ganyu_model, help='sovits model path')
-    parser.add_argument('-c', '--config_path', type=str, default="configs/ganyu.json", help='sovits model config path')
+    parser.add_argument('-c', '--config_path', type=str, default=ganyu_config, help='sovits model config path')
     parser.add_argument('-t', '--trans', type=int, default=0, help='pitch shift transposition') 
     parser.add_argument('-a', '--auto_predict_f0', action='store_true', default=False,
                         help="auto predict f0 for voice conversion, don't turn on this when converting to song") 
@@ -179,13 +156,8 @@ def main():
     args = parser.parse_args()
 
     initModels(args)
-    generate_audio("Warming up...", speaker_VITS=22)
-    print("Starting speech responder")
-    # loop the checker and speaker
-    while True:
-        checkForChangesAndSpeak()
-        # sleep for 0.5 seconds
-        time.sleep(0.5)
+    
+    generate_audio(args.text)
     
 if __name__ == "__main__":
     main()
