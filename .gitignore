@@ -3,5 +3,4 @@ __pycache__
 *.pth
 tmp/*
 eddi_data/messages.json
-config.json
 output.wav

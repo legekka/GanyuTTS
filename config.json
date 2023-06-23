@@ -1,0 +1,8 @@
+{
+    "sovits_models": {
+        "ganyu": {
+            "model_path": "models/ganyu_27+14.pth",
+            "config_path": "configs/ganyu.json"
+        }
+    }
+}

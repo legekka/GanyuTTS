@@ -37,10 +37,6 @@ speaker_VITS = 22 # 22 and 99 was good
 
 sovits_models = config["sovits_models"]
 
-# check if os is windows
-if os.name == 'nt':
-    os.environ["PHONEMIZER_ESPEAK_PATH"] = config["phonemizer"]["PHONEMIZER_ESPEAK_PATH"]
-    os.environ["PHONEMIZER_ESPEAK_LIBRARY"] = config["phonemizer"]["PHONEMIZER_ESPEAK_LIBRARY"]
 
 # defining flask app
 app = Flask("ganyuTTS")
