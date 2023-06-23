@@ -1,0 +1,10 @@
+version: "3.8"
+services:
+  api:
+    image: "legekka/ganyutts"
+    restart: always
+    ports:
+      - "4111:4111"
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    runtime: nvidia
