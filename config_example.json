@@ -1,21 +1,25 @@
 {
+    "vc_type": "rvc",
     "phonemizer": {
         "PHONEMIZER_ESPEAK_PATH": "C:\\Program Files \\eSpeak\\command_line\\espeak.exe",
         "PHONEMIZER_ESPEAK_LIBRARY": "C:\\Program Files\\eSpeak NG\\libespeak-ng.dll"
-    },
-    "tts": {
-        "sid1": "22",
-        "sid2": "ganyu"
-    },
-    "hosts": {
-        "tts_api": "http://127.0.0.1:4111/tts",
-        "TGW_api": "http://127.0.0.1:7860/run/textgen",
-        "TGWWS_api": "ws://127.0.0.1:7860/queue/join"
     },
     "sovits_models": {
         "ganyu": {
             "model_path": "models/ganyu_27+14.pth",
             "config_path": "configs/ganyu.json"
+        }
+    },
+    "rvc_models": {
+        "ganyu": {
+            "model_path": "models/Ganyu3.pth",
+            "file_index": "models/GanyuH.index",
+            "sid": 0,
+            "f0_up_key": 0,
+            "f0_file": null,
+            "index_rate": 0.72,
+            "f0_method": "crepe",
+            "crepe_hop_length": 32
         }
     }
 }

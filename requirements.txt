@@ -22,3 +22,6 @@ monotonic-align==1.0.0
 sounddevice==0.4.6
 flask==2.2.3
 flask-cors==3.0.10
+torchcrepe==0.0.18
+faiss-cpu==1.7.0; sys_platform == "darwin"
+faiss-cpu==1.7.2; sys_platform != "darwin"

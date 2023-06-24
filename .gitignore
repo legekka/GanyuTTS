@@ -1,6 +1,7 @@
 __pycache__
 *.pt
 *.pth
+models/*
 tmp/*
 eddi_data/messages.json
 config.json
